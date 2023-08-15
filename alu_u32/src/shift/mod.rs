@@ -70,9 +70,7 @@ where
             ],
             M::F::ZERO,
         );
-        let input_1 = (0..4)
-            .map(|_| VirtualPairCol::constant(M::F::ZERO))
-            .collect::<Vec<_>>();
+        let input_1 = COL_MAP.input.0.map(VirtualPairCol::single_main);
         let output = COL_MAP.output.0.map(VirtualPairCol::single_main);
         let clk_or_zero = VirtualPairCol::constant(M::F::ZERO);
         let mut fields = vec![opcode];
@@ -80,25 +78,13 @@ where
         fields.extend(power_of_two);
         fields.extend(output.clone());
         fields.push(clk_or_zero);
-        let mul_send = Interaction {
-            fields: fields.clone(),
-            count: VirtualPairCol::one(),
-            argument_index: machine.general_bus(),
-        };
-        let div_send = Interaction {
+        let general_bus_send = Interaction {
             fields,
             count: VirtualPairCol::one(),
             argument_index: machine.general_bus(),
         };
 
-        // Range bus
-        let range_send = Interaction {
-            fields: output.to_vec(),
-            count: VirtualPairCol::one(),
-            argument_index: machine.range_bus(),
-        };
-
-        vec![range_send, power_of_two_send, mul_send, div_send]
+        vec![power_of_two_send, general_bus_send]
     }
 
     fn global_receives(&self, machine: &M) -> Vec<Interaction<M::F>> {
@@ -197,8 +183,6 @@ where
         state
             .cpu_mut()
             .push_bus_op(imm, <Self as Instruction<M>>::OPCODE, ops);
-
-        state.range_check(a);
     }
 }
 
@@ -236,7 +220,5 @@ where
         state
             .cpu_mut()
             .push_bus_op(imm, <Self as Instruction<M>>::OPCODE, ops);
-
-        state.range_check(a);
     }
 }

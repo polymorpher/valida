@@ -15,5 +15,9 @@ where
     fn eval(&self, builder: &mut AB) {
         let main = builder.main();
         let local: &Shift32Cols<AB::Var> = main.row(0).borrow();
+
+        builder.assert_bool(local.is_shl);
+        builder.assert_bool(local.is_shr);
+        builder.assert_one(local.is_shl + local.is_shr);
     }
 }

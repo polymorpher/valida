@@ -163,8 +163,6 @@ where
         state
             .cpu_mut()
             .push_bus_op(imm, <Self as Instruction<M>>::OPCODE, ops);
-
-        state.range_check(a);
     }
 }
 
@@ -199,8 +197,6 @@ where
         state
             .cpu_mut()
             .push_bus_op(imm, <Self as Instruction<M>>::OPCODE, ops);
-
-        state.range_check(a);
     }
 }
 
