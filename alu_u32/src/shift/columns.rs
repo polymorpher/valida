@@ -10,6 +10,14 @@ pub struct Shift32Cols<T> {
     pub input_2: Word<T>,
     pub output: Word<T>,
 
+    /// Bit decomposition of the smallest limb of input_2.
+    pub bits_2: [T; 8],
+
+    /// Temporary values used to check power_of_two.
+    pub temp_1: T,
+    pub temp_2: T,
+
+    /// Value by which input_1 should be multiplied or divided.
     pub power_of_two: Word<T>,
 
     pub is_shl: T,

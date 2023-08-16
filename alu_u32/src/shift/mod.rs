@@ -4,6 +4,7 @@ use crate::pad_to_power_of_two;
 use alloc::vec;
 use alloc::vec::Vec;
 use columns::{Shift32Cols, COL_MAP, NUM_COLS};
+use core::iter;
 use core::mem::transmute;
 use valida_bus::{MachineWithGeneralBus, MachineWithPowerOfTwoBus, MachineWithRangeBus8};
 use valida_cpu::MachineWithCpuChip;
@@ -51,18 +52,6 @@ where
     }
 
     fn global_sends(&self, machine: &M) -> Vec<Interaction<M::F>> {
-        // Power of two bus
-        let shift = VirtualPairCol::single_main(COL_MAP.input_2[3]);
-        let power_of_two = COL_MAP.power_of_two.0.map(VirtualPairCol::single_main);
-        let mut fields = vec![shift];
-        fields.extend(power_of_two.clone());
-        let power_of_two_send = Interaction {
-            fields,
-            count: VirtualPairCol::one(),
-            argument_index: machine.power_of_two_bus(),
-        };
-
-        // General bus (multiplication and division)
         let opcode = VirtualPairCol::new_main(
             vec![
                 (COL_MAP.is_shl, M::F::from_canonical_u32(MUL32)),
@@ -70,21 +59,24 @@ where
             ],
             M::F::ZERO,
         );
-        let input_1 = COL_MAP.input.0.map(VirtualPairCol::single_main);
+        let input_1 = COL_MAP.input_1.0.map(VirtualPairCol::single_main);
+        let input_2 = COL_MAP.power_of_two.0.map(VirtualPairCol::single_main);
         let output = COL_MAP.output.0.map(VirtualPairCol::single_main);
-        let clk_or_zero = VirtualPairCol::constant(M::F::ZERO);
+
         let mut fields = vec![opcode];
         fields.extend(input_1);
-        fields.extend(power_of_two);
-        fields.extend(output.clone());
-        fields.push(clk_or_zero);
-        let general_bus_send = Interaction {
+        fields.extend(input_2);
+        fields.extend(output);
+
+        let is_real = VirtualPairCol::sum_main(vec![COL_MAP.is_shl, COL_MAP.is_shr]);
+
+        let send = Interaction {
             fields,
-            count: VirtualPairCol::one(),
+            count: is_real,
             argument_index: machine.general_bus(),
         };
 
-        vec![power_of_two_send, general_bus_send]
+        vec![send]
     }
 
     fn global_receives(&self, machine: &M) -> Vec<Interaction<M::F>> {
