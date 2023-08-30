@@ -13,6 +13,7 @@ use p3_air::VirtualPairCol;
 use p3_field::PrimeField;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_maybe_rayon::*;
+use valida_util::pad_to_power_of_two;
 
 pub mod columns;
 pub mod stark;
@@ -81,26 +82,31 @@ where
             rows.push(row);
         }
 
-        RowMajorMatrix::new(rows.concat(), NUM_OUTPUT_COLS)
+        // TODO: Implement witness data for counter and counter_mult, and then
+        // re-enable local_sends and local_receives
+
+        let mut values = rows.concat();
+        pad_to_power_of_two::<NUM_OUTPUT_COLS, F>(&mut values);
+        RowMajorMatrix::new(values, NUM_OUTPUT_COLS)
     }
 
-    fn local_sends(&self) -> Vec<Interaction<M::F>> {
-        let sends = Interaction {
-            fields: vec![VirtualPairCol::single_main(OUTPUT_COL_MAP.diff)],
-            count: VirtualPairCol::one(),
-            argument_index: BusArgument::Local(0),
-        };
-        vec![sends]
-    }
+    //fn local_sends(&self) -> Vec<Interaction<M::F>> {
+    //    let sends = Interaction {
+    //        fields: vec![VirtualPairCol::single_main(OUTPUT_COL_MAP.diff)],
+    //        count: VirtualPairCol::one(),
+    //        argument_index: BusArgument::Local(0),
+    //    };
+    //    vec![sends]
+    //}
 
-    fn local_receives(&self) -> Vec<Interaction<M::F>> {
-        let receives = Interaction {
-            fields: vec![VirtualPairCol::single_main(OUTPUT_COL_MAP.counter)],
-            count: VirtualPairCol::single_main(OUTPUT_COL_MAP.counter_mult),
-            argument_index: BusArgument::Local(0),
-        };
-        vec![receives]
-    }
+    //fn local_receives(&self) -> Vec<Interaction<M::F>> {
+    //    let receives = Interaction {
+    //        fields: vec![VirtualPairCol::single_main(OUTPUT_COL_MAP.counter)],
+    //        count: VirtualPairCol::single_main(OUTPUT_COL_MAP.counter_mult),
+    //        argument_index: BusArgument::Local(0),
+    //    };
+    //    vec![receives]
+    //}
 
     fn global_receives(&self, machine: &M) -> Vec<Interaction<M::F>> {
         let opcode = VirtualPairCol::single_main(OUTPUT_COL_MAP.opcode);

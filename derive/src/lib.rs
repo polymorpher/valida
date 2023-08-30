@@ -192,7 +192,7 @@ fn prove_method(chips: &[&Field]) -> TokenStream2 {
             //// TODO: Want to avoid cloning, but this leads to lifetime issues...
             //// let main_trace_views = main_traces.iter().map(|trace| trace.as_view()).collect();
 
-            //let (main_commit, main_data) = config.pcs().commit_batches(main_traces.clone());
+            let (main_commit, main_data) = config.pcs().commit_batches(main_traces.clone());
             //// TODO: Have challenger observe main_commit.
 
             let mut perm_challenges = Vec::new();
@@ -207,7 +207,7 @@ fn prove_method(chips: &[&Field]) -> TokenStream2 {
             //// TODO: Want to avoid cloning, but this leads to lifetime issues...
             //// let perm_trace_views = perm_traces.iter().map(|trace| trace.as_view()).collect();
 
-            //let (perm_commit, perm_data) = config.pcs().commit_batches(perm_traces.clone());
+            let (perm_commit, perm_data) = config.pcs().commit_batches(perm_traces.clone());
             //// TODO: Have challenger observe perm_commit.
 
             //let opening_points = &[vec![Self::EF::TWO], vec![Self::EF::TWO]]; // TODO
@@ -216,6 +216,10 @@ fn prove_method(chips: &[&Field]) -> TokenStream2 {
 
             let mut chip_proofs = vec![];
             #prove_starks
+
+            #[cfg(debug_assertions)]
+            check_cumulative_sums::<Self>(&perm_traces[..]);
+
             MachineProof {
                 // opening_proof,
                 chip_proofs,

@@ -1,6 +1,5 @@
 extern crate alloc;
 
-use crate::pad_to_power_of_two;
 use alloc::vec;
 use alloc::vec::Vec;
 use columns::{Add32Cols, ADD_COL_MAP, NUM_ADD_COLS};
@@ -15,6 +14,7 @@ use p3_air::VirtualPairCol;
 use p3_field::PrimeField;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_maybe_rayon::*;
+use valida_util::pad_to_power_of_two;
 
 pub mod columns;
 pub mod stark;
@@ -50,19 +50,20 @@ where
     }
 
     fn global_sends(&self, machine: &M) -> Vec<Interaction<M::F>> {
-        let output = ADD_COL_MAP
+        let sends = ADD_COL_MAP
             .output
             .0
-            .map(VirtualPairCol::single_main)
+            .map(|field| {
+                let output = VirtualPairCol::single_main(field);
+                Interaction {
+                    fields: vec![output],
+                    count: VirtualPairCol::single_main(ADD_COL_MAP.is_real),
+                    argument_index: machine.range_bus(),
+                }
+            })
             .into_iter()
             .collect::<Vec<_>>();
-
-        let send = Interaction {
-            fields: output,
-            count: VirtualPairCol::one(),
-            argument_index: machine.range_bus(),
-        };
-        vec![send]
+        sends
     }
 
     fn global_receives(&self, machine: &M) -> Vec<Interaction<M::F>> {
@@ -112,6 +113,7 @@ impl Add32Chip {
                 if b[1] as u32 + c[1] as u32 + carry_2 > 255 {
                     cols.carry[2] = F::ONE;
                 }
+                cols.is_real = F::ONE;
             }
         }
         row
@@ -127,7 +129,7 @@ instructions!(Add32Instruction);
 
 impl<M> Instruction<M> for Add32Instruction
 where
-    M: MachineWithAdd32Chip + MachineWithRangeChip,
+    M: MachineWithAdd32Chip + MachineWithRangeChip<256>,
 {
     const OPCODE: u32 = ADD32;
 
